@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered user profile in PulseChat",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "Email address" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 50, "description": "User display name" },
+        "username": { "type": "string", "minLength": 3, "maxLength": 30, "pattern": "^[a-zA-Z0-9_]+$", "description": "Unique username handle" },
+        "photoURL": { "type": "string", "maxLength": 1000000, "description": "Profile picture URL or base64 image data" },
+        "phoneNumber": { "type": "string", "maxLength": 25, "description": "Optional phone number" },
+        "bio": { "type": "string", "maxLength": 250, "description": "Short bio or about me" },
+        "isOnline": { "type": "boolean", "description": "User presence status" },
+        "lastSeen": { "type": "string", "description": "ISO timestamp of last activity" },
+        "createdAt": { "type": "string", "description": "Account creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Profile last updated timestamp" }
+      },
+      "required": ["uid", "email", "displayName", "username"]
+    },
+    "Username": {
+      "title": "Username",
+      "description": "Unique username reservation mapping",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "UID that owns this username" },
+        "username": { "type": "string", "minLength": 3, "maxLength": 30, "pattern": "^[a-zA-Z0-9_]+$", "description": "Username handle" },
+        "createdAt": { "type": "string", "description": "Reservation timestamp" }
+      },
+      "required": ["uid", "username"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Chat channel between participants",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Conversation document ID" },
+        "participants": { "type": "array", "description": "Array of user UIDs in this chat" },
+        "participantDetails": { "type": "object", "description": "Basic profile snippet for each participant" },
+        "lastMessageText": { "type": "string", "maxLength": 1000, "description": "Summary of the last message" },
+        "lastMessageSenderId": { "type": "string", "description": "UID of who sent the last message" },
+        "lastMessageTime": { "type": "string", "description": "Timestamp of the last message" },
+        "unreadCount": { "type": "object", "description": "Map of user UID to unread messages count" },
+        "createdAt": { "type": "string", "description": "Conversation created timestamp" },
+        "updatedAt": { "type": "string", "description": "Last activity timestamp" }
+      },
+      "required": ["participants", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual chat message inside a conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Message document ID" },
+        "conversationId": { "type": "string", "description": "Parent conversation ID" },
+        "senderId": { "type": "string", "description": "UID of the message sender" },
+        "senderName": { "type": "string", "maxLength": 50, "description": "Display name of sender at send time" },
+        "senderPhotoURL": { "type": "string", "maxLength": 1000000, "description": "Sender avatar" },
+        "text": { "type": "string", "maxLength": 10000, "description": "Message text content" },
+        "type": { "type": "string", "enum": ["text", "image", "file", "audio"], "description": "Message content type" },
+        "mediaUrl": { "type": "string", "maxLength": 1000000, "description": "Media URL or base64 data" },
+        "fileName": { "type": "string", "maxLength": 255, "description": "Attachment filename" },
+        "fileSize": { "type": "number", "description": "Attachment size in bytes" },
+        "replyTo": { "type": "object", "description": "Quoted message snippet" },
+        "readBy": { "type": "array", "description": "Array of UIDs who have read the message" },
+        "isDeleted": { "type": "boolean", "description": "Soft delete flag" },
+        "createdAt": { "type": "string", "description": "Sent timestamp" }
+      },
+      "required": ["conversationId", "senderId", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles with presence and bio"
+    },
+    "/usernames/{username}": {
+      "schema": "Username",
+      "description": "Stores username reservations to guarantee uniqueness"
+    },
+    "/conversations/{conversationId}": {
+      "schema": "Conversation",
+      "description": "Stores 1-to-1 and group conversations metadata"
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Stores messages sent within a conversation"
+    }
+  }
+}

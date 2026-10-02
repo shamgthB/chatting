@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global helper: user must be signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Users profile collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Username reservation registry
+    match /usernames/{username} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Conversations collection
+    match /conversations/{conversationId} {
+      // Allow read if user is one of the participants
+      allow read: if isSignedIn() && (
+        resource == null ||
+        request.auth.uid in resource.data.participants
+      );
+
+      // Allow create if user is included in participants
+      allow create: if isSignedIn() && (
+        request.auth.uid in request.resource.data.participants
+      );
+
+      // Allow update if user is a participant
+      allow update: if isSignedIn() && (
+        resource == null ||
+        request.auth.uid in resource.data.participants ||
+        request.auth.uid in request.resource.data.participants
+      );
+
+      allow delete: if false;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Read allowed if user is sender, receiver, or a participant in the conversation
+        allow read: if isSignedIn() && (
+          resource == null ||
+          resource.data.senderId == request.auth.uid ||
+          resource.data.receiverId == request.auth.uid ||
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+        );
+
+        // Create allowed only if current authenticated user is the sender
+        allow create: if isSignedIn() && (
+          request.resource.data.senderId == request.auth.uid
+        );
+
+        // Update allowed for sender or for receiver updating read status/read receipts
+        allow update: if isSignedIn() && (
+          resource.data.senderId == request.auth.uid ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'readBy', 'isDeleted', 'text', 'updatedAt'])
+        );
+
+        // Delete allowed only for original sender
+        allow delete: if isSignedIn() && (
+          resource.data.senderId == request.auth.uid
+        );
+      }
+    }
+  }
+}

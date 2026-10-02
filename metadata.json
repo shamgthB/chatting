@@ -1,0 +1,6 @@
+{
+  "name": "PulseChat - Real-Time Messaging",
+  "description": "Modern real-time messaging web app with Google authentication, private chats, media sharing, and instant delivery receipts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
